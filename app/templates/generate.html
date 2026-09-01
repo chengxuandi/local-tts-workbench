@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}生成音频 · Local TTS Workbench{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><h1>生成音频</h1><p>最终文本、UTF-8 bytes 与预计费用都会由后端重新计算。</p></div>
+</section>
+{% if not projects or not characters %}
+<div class="notice warning">开始前需要至少一个<a href="/projects">项目</a>和一个已配置 reference_id 的<a href="/characters">角色</a>。</div>
+{% endif %}
+<form id="generate-form" class="card form-grid" action="/api/generate" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="client_request_id" id="client_request_id" value="{{ client_request_id }}">
+  <label>项目<select name="project_id" required>{% for p in projects %}<option value="{{ p.id }}" {% if copied and copied.project_id == p.id %}selected{% endif %}>{{ p.display_name }} · {{ p.slug }}</option>{% endfor %}</select></label>
+  <label>角色<select name="character_id" id="character" required>{% for c in characters %}<option value="{{ c.id }}" data-emotion="{{ c.default_emotion|e }}" data-speed="{{ c.default_speed if c.default_speed is not none else '' }}" data-model="{{ c.default_model or settings.default_model }}" {% if copied and copied.character_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
+  <label class="full">正文<textarea name="text" id="text" rows="7" required placeholder="我没有生气。[sigh] 你继续说吧。">{{ copied.original_text if copied else '' }}</textarea></label>
+  <label class="full">情绪 / 表演描述<textarea name="emotion" id="emotion" rows="3" placeholder="声音克制，压着怒气，后半句逐渐失望">{{ copied.emotion_description if copied else '' }}</textarea></label>
+  <label>语速 <span class="hint">官方 prosody.speed，0.5–2.0；留空用默认</span><input name="speed" id="speed" type="number" min="0.5" max="2" step="0.05" value="{{ copied.speed if copied and copied.speed is not none else '' }}"></label>
+  <label>模型<select name="model" id="model">{% for m in models %}<option value="{{ m }}" {% if (copied and copied.model == m) or (not copied and settings.default_model == m) %}selected{% endif %}>{{ m }}{% if m == 's2.1-pro-free' %} · 免费开发档{% endif %}</option>{% endfor %}</select></label>
+  <label>输出格式<select name="output_format">{% for f in formats %}<option value="{{ f }}" {% if (copied and copied.format == f) or (not copied and settings.default_output_format == f) %}selected{% endif %}>{{ f }}</option>{% endfor %}</select></label>
+  <div class="preview full">
+    <div class="preview-head"><strong>最终发送给 Fish 的文本</strong><span><b id="byte-count">0</b> UTF-8 bytes · 预计费用 <b id="cost">$0.000000</b></span></div>
+    <pre id="effective-preview"></pre>
+  </div>
+  <div class="full actions"><button id="generate-button" type="submit" {% if not projects or not characters %}disabled{% endif %}>生成音频</button></div>
+</form>
+<section id="result" class="card result hidden" aria-live="polite"></section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', path='/app.js') }}"></script>{% endblock %}

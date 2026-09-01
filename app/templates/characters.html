@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}角色 · Local TTS Workbench{% endblock %}
+{% block content %}
+<section class="page-heading"><div><h1>角色</h1><p>可以绑定已有 reference_id，或上传 1–20 个参考文件创建 private Voice Clone。</p></div></section>
+<div class="tabs">
+  <details class="card" open><summary>使用已有 Fish reference_id</summary>
+    <form method="post" action="/characters/reference" class="form-grid inner">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>角色名称<input name="name" required></label><label>Fish reference_id<input name="reference_id" required autocomplete="off"></label>
+      <label class="full">描述<textarea name="description" rows="2"></textarea></label>
+      <label class="full">默认情绪<textarea name="default_emotion" rows="2"></textarea></label>
+      <label>默认语速<input name="default_speed" type="number" min="0.5" max="2" step="0.05"></label>
+      <label>默认模型<select name="default_model">{% for m in models %}<option {% if m == settings.default_model %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></label>
+      <div class="full"><button>创建角色</button></div>
+    </form>
+  </details>
+  <details class="card"><summary>上传参考音频并克隆</summary>
+    <p class="muted">请只克隆你有权使用的声音。建议清晰、单人、低噪声；每个文件本地上限 {{ max_upload_mb }} MB。请求会明确设置 <code>visibility=private</code>，不会生成收费试听样本。</p>
+    <form method="post" action="/characters/clone" enctype="multipart/form-data" class="form-grid inner">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>角色名称<input name="name" required></label><label>参考音频（1–20 个）<input name="voices" type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/flac,audio/ogg,audio/opus" multiple required></label>
+      <label class="full">描述<textarea name="description" rows="2"></textarea></label>
+      <label class="full">默认情绪<textarea name="default_emotion" rows="2"></textarea></label>
+      <label>默认语速<input name="default_speed" type="number" min="0.5" max="2" step="0.05"></label>
+      <label>默认模型<select name="default_model">{% for m in models %}<option {% if m == settings.default_model %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></label>
+      <div class="full"><button>保存并创建私有 Voice Clone</button></div>
+    </form>
+  </details>
+</div>
+<div class="list character-list">{% for c in characters %}<article class="card character-card {% if c.is_archived %}archived{% endif %}">
+  <div class="card-head"><div><h3>{{ c.name }} {% if c.is_archived %}<span class="badge">已归档</span>{% endif %}</h3><p>{{ c.description or '无描述' }}</p></div><span class="status {{ c.clone_status }}">{{ c.clone_status }}</span></div>
+  <dl><div><dt>reference_id</dt><dd>{{ c.fish_reference_id or '未配置' }}</dd></div><div><dt>默认模型</dt><dd>{{ c.default_model or settings.default_model }}</dd></div><div><dt>默认语速</dt><dd>{{ c.default_speed if c.default_speed is not none else 'Fish 默认' }}</dd></div></dl>
+  {% if c.fish_reference_id %}<p class="muted">reference_id 已配置；本地就绪不等同于远程免费验证。</p>{% endif %}
+  {% if c.clone_error %}<div class="notice error">{{ c.clone_error }}</div>{% endif %}
+  {% if c.local_reference_audio %}<audio controls preload="none" src="/characters/{{ c.id }}/reference-audio"></audio>{% else %}<p class="muted">没有本地参考音频</p>{% endif %}
+  <div class="actions">{% if c.clone_status == 'clone_failed' %}<form method="post" action="/characters/{{ c.id }}/retry-clone"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary">重新尝试克隆</button></form>{% endif %}
+  {% if not c.is_archived %}<form method="post" action="/characters/{{ c.id }}/delete" onsubmit="return confirm('确定删除或归档这个角色吗？')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="danger">删除 / 归档</button></form>{% endif %}</div>
+</article>{% else %}<div class="empty">还没有角色。</div>{% endfor %}</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}项目 · Local TTS Workbench{% endblock %}
+{% block content %}
+<section class="page-heading"><div><h1>项目</h1><p>显示名称用于界面，slug 用作安全的本地文件夹。</p></div></section>
+<form class="card compact-form" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>目录 slug<input name="slug" required placeholder="chapter_01" pattern="[^/\\]+"></label>
+  <label>显示名称<input name="display_name" required placeholder="第一章"></label>
+  <button type="submit">创建项目</button>
+</form>
+<div class="list">{% for p in projects %}<article class="card row-card"><div><h3>{{ p.display_name }}</h3><code>{{ p.slug }}</code></div><div class="muted">下一个成功编号：{{ '%03d'|format(p.next_sequence) }}</div></article>{% else %}<div class="empty">还没有项目。</div>{% endfor %}</div>
+{% endblock %}

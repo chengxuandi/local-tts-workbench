@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}历史 · Local TTS Workbench{% endblock %}
+{% block content %}
+<section class="page-heading"><div><h1>生成历史</h1><p>成功、失败和结果不确定的请求都会保留。</p></div>
+<form method="get" class="filter"><select name="character_id" onchange="this.form.submit()"><option value="">全部角色</option>{% for c in characters %}<option value="{{ c.id }}" {% if selected_character == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></form></section>
+<div class="list history-list">{% for g in generations %}<article class="card history-card">
+  <div class="card-head"><div><h3>{% if g.sequence_number %}{{ '%03d'|format(g.sequence_number) }}{% else %}—{% endif %} {{ g.character_name_snapshot }}</h3><p class="excerpt">“{{ g.original_text }}”</p></div><span class="status {{ g.status }}">{{ g.status }}</span></div>
+  {% if g.status == 'success' %}<audio controls preload="none" src="/audio/{{ g.id }}"></audio>{% endif %}
+  {% if g.error_message %}<div class="notice {% if g.status == 'uncertain' %}warning{% else %}error{% endif %}">{{ g.error_message }}</div>{% endif %}
+  <dl><div><dt>情绪</dt><dd>{{ g.emotion_description or '无' }}</dd></div><div><dt>模型 / 格式</dt><dd>{{ g.model }} / {{ g.format }}</dd></div><div><dt>输入 / 预计成本</dt><dd>{{ g.utf8_bytes }} bytes / ${{ '%.6f'|format(g.estimated_cost_usd) }}</dd></div><div><dt>时间</dt><dd>{{ g.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</dd></div></dl>
+  <div class="actions">{% if g.character_id %}<form method="post" action="/history/{{ g.id }}/regenerate" onsubmit="return confirm('重新生成会再次调用 Fish，可能产生费用。继续吗？')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button>重新生成</button></form><a class="button secondary" href="/generate?copy={{ g.id }}">复制参数</a>{% endif %}<form method="post" action="/history/{{ g.id }}/delete" onsubmit="return confirm('确定删除这条生成记录和对应音频吗？')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="danger">删除</button></form></div>
+</article>{% else %}<div class="empty">还没有生成记录。</div>{% endfor %}</div>
+{% endblock %}

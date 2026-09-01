@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}设置 · Local TTS Workbench{% endblock %}
+{% block content %}
+<section class="page-heading"><div><h1>设置</h1><p>API Key 只保存在后端 <code>.env</code>，普通设置保存在 SQLite。</p></div></section>
+<form class="card form-grid" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label class="full">Fish API Key <span class="hint">{{ key_status }}；留空表示保持不变</span><input name="api_key" type="password" autocomplete="new-password" placeholder="输入新 Key 以替换"></label>
+  <label>默认模型<select name="default_model">{% for m in models %}<option value="{{ m }}" {% if settings.default_model == m %}selected{% endif %}>{{ m }}{% if m == 's2.1-pro-free' %} · 免费开发档{% endif %}</option>{% endfor %}</select></label>
+  <label>每百万 UTF-8 bytes 预计单价（USD）<input name="price_per_m_utf8_bytes" type="number" min="0" step="0.01" value="{{ settings.price_per_m_utf8_bytes }}" required><span class="hint">用户可修改的预计单价；s2.1-pro 当前官方价为 $15/M，free 档为 $0/M。</span></label>
+  <label>默认输出格式<select name="default_output_format">{% for f in formats %}<option {% if settings.default_output_format == f %}selected{% endif %}>{{ f }}</option>{% endfor %}</select></label>
+  <div class="full actions"><button>保存设置</button></div>
+</form>
+<form class="card compact-form" method="post" action="/settings/test-connection">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <div><strong>无费用连接检查</strong><p class="muted">调用官方 GET /wallet/self/api-credit，不生成音频。</p></div><button class="secondary">测试连接</button>
+</form>
+{% endblock %}

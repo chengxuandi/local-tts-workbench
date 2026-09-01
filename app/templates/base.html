@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Local TTS Workbench{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/generate">Local TTS Workbench</a>
+    <nav>
+      <a href="/generate" class="{% if request.url.path == '/generate' %}active{% endif %}">生成</a>
+      <a href="/projects" class="{% if request.url.path == '/projects' %}active{% endif %}">项目</a>
+      <a href="/characters" class="{% if request.url.path == '/characters' %}active{% endif %}">角色</a>
+      <a href="/history" class="{% if request.url.path == '/history' %}active{% endif %}">历史</a>
+      <a href="/settings" class="{% if request.url.path == '/settings' %}active{% endif %}">设置</a>
+      <form method="post" action="/shutdown" onsubmit="return confirm('确定退出 Local TTS Workbench 吗？')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="nav-exit" type="submit">退出程序</button>
+      </form>
+    </nav>
+  </header>
+  <main class="container">
+    {% if message %}<div class="notice {{ level }}">{{ message }}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
